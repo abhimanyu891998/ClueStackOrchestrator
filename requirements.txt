@@ -2,3 +2,5 @@ python-dotenv
 langchain_anthropic
 langchain_core
 pydantic
+langgraph
+langchain
