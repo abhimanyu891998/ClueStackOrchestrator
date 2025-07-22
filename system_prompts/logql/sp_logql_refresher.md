@@ -28,12 +28,13 @@ Consider the user's detailed query which you will be given as input and come up 
 Follow these guidelines by all means, do not introduce new things by yourself:
 
 1. Use ONLY elements present in the provided wiki for writing LogQL queries. Ensure that the query conforms to the wiki and is always correct.
-2. Create a best-fit regex (based on the logs provided to you in <sample_logs>) that captures the logs described in the user's detailed query, and match only the instructions present in it. Do not add more things on your own.
-3. Be smart about constructing the best-fit regex. If you think the detailed query is vague, only then augment the LogQL query to not be too restrictive.
-4. Do not add formatting to the logs; we want full JSONs of each log entry unaltered.
-5. Only populate from_time and to_time if the query specifically requires it, else just empty strings.
-6. If time-frames are mentioned in the query, then populate start and end time accordingly. Leave as empty strings incase no time frame. DO NOT add time queries in the logql.
-7. If no to-time can be inferred just populate with current UTC time if and only if there is a start-time.
+2. Use <sample_logs> to infer what kind of reg-ex to write. You can assume that <sample_logs> are exhaustively covering the logging scenarios.
+3. Create a best-fit inclusive regex (based on the logs provided to you in <sample_logs>) that captures the logs described in the user's query. 
+4. Be smart about constructing the best-fit regex. If you think the detailed query is vague, only then augment the LogQL query to not be too restrictive.
+5. Do not add formatting to the logs; we want full JSONs of each log entry unaltered.
+6. Only populate from_time and to_time if the query specifically requires it, else just empty strings.
+7. If time-frames are mentioned in the query, then populate start and end time accordingly. Leave as empty strings incase no time frame. DO NOT add time queries in the logql.
+8. If no to-time can be inferred just populate with current UTC time if and only if there is a start-time.
 
 
 Remember:

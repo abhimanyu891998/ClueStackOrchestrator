@@ -109,7 +109,7 @@ def get_logql_from_nl_query(query: str, user_application: str) -> LogQLOutput:
         # Load system prompts and resources
         wiki = read_file("system_prompts/logql/logql_guide.md")
         system_prompt = read_file("system_prompts/logql/sp_logql_refresher.md")
-        sample_logs = read_file("system_prompts/logql/sample_logs_wiki.md")
+        sample_logs = read_file("system_prompts/logql/sample_logs_wiki_2.md")
 
         # Get current UTC time for reference
         utc_date_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
@@ -128,7 +128,7 @@ def get_logql_from_nl_query(query: str, user_application: str) -> LogQLOutput:
 
     try:
         llm = ChatAnthropic(
-            model_name=CLAUDE_SONNET_3_5_LATEST,
+            model_name=CLAUDE_SONNET_4_LATEST,
             temperature=0.1,
             timeout=60,
             stop=None
@@ -267,7 +267,7 @@ def main() -> None:
     """
     load_dotenv()
 
-    query = "Issues of data being stale in the app."
+    query = "Going into burst-mode?"
     user_application = "marketdata-publisher"
 
     try:
