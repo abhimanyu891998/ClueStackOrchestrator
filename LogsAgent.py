@@ -51,13 +51,13 @@ class LogQLOutput(BaseModel):
 
 def datetime_to_unix_epoch(datetime_str: str) -> int:
     """
-    Convert a datetime string in format '2025-07-18 20:08:06' to Unix epoch timestamp.
+    Convert a datetime string in format '2025-07-18 20:08:06' to UTC Unix epoch timestamp.
 
     Args:
         datetime_str (str): Datetime string in format 'YYYY-MM-DD HH:MM:SS'
 
     Returns:
-        int: Unix epoch timestamp
+        int: UTC Unix epoch timestamp
 
     Raises:
         ValueError: If datetime string format is invalid
@@ -67,9 +67,13 @@ def datetime_to_unix_epoch(datetime_str: str) -> int:
         1758394086
     """
     try:
+        # Parse the datetime string into a naive datetime object
         dt = datetime.strptime(datetime_str, '%Y-%m-%d %H:%M:%S')
-        epoch_time = int(dt.timestamp())
-        logger.debug(f"Converted {datetime_str} to epoch time {epoch_time}")
+        # Make it timezone-aware by setting it to UTC
+        dt_utc = dt.replace(tzinfo=timezone.utc)
+        # Convert to UTC epoch timestamp
+        epoch_time = int(dt_utc.timestamp())
+        logger.debug(f"Converted {datetime_str} to UTC epoch time {epoch_time}")
         return epoch_time
     except ValueError as e:
         logger.error(f"Failed to parse datetime string '{datetime_str}': {e}")
@@ -263,7 +267,7 @@ def main() -> None:
     """
     load_dotenv()
 
-    query = "Logs on the utilization of queues"
+    query = "Issues of data being stale in the app."
     user_application = "marketdata-publisher"
 
     try:
