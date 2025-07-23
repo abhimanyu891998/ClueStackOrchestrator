@@ -1,6 +1,9 @@
 import asyncio
 
+from anthropic import Anthropic
+from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
+from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import SystemMessage, HumanMessage
 from langgraph_supervisor import create_supervisor
 
@@ -10,6 +13,7 @@ from consts import CLAUDE_SONNET_4_LATEST
 import os
 from schema import RootAgentState
 from utils import read_file
+from langsmith.wrappers import wrap_anthropic
 
 
 async def orchestrator():
@@ -33,6 +37,7 @@ async def orchestrator():
     log_agent = logging_agent()
     supervisor = create_supervisor(
         model=init_chat_model(f"anthropic:{CLAUDE_SONNET_4_LATEST}"),
+        # model=init_chat_model("openai:gpt-4.1"),
         agents=[log_agent, code_agent],
         prompt=SystemMessage(content=sp),
         add_handoff_messages=True
@@ -42,9 +47,10 @@ async def orchestrator():
 
 
 async def main():
+    load_dotenv()
     graph = await orchestrator()
     user_query = [
-        HumanMessage("Marketdata has been stale for more than 10000ms in application: marketdata-publisher for repo: abhimanyu891998/cluestackmvpserver")
+        HumanMessage("Market data was reported stale at 15:35:47 in the application: marketdata-publisher for repo: abhimanyu891998/cluestackmvpserver")
     ]
     async for chunk in graph.astream({"messages": user_query}, stream_mode="updates"):
         print(chunk)

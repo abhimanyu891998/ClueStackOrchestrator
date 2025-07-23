@@ -4,6 +4,9 @@ import logging
 import os
 from typing import TypedDict, Optional, Dict, Any
 
+from anthropic import Anthropic
+from langchain.chat_models import init_chat_model
+from langsmith import traceable
 from dotenv import load_dotenv
 from langchain.agents import AgentExecutor
 from langchain_anthropic import ChatAnthropic
@@ -12,8 +15,9 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.tools import tool
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import create_react_agent
+from langsmith.wrappers import wrap_anthropic
 from pydantic import BaseModel, Field
-from langchain import hub
+from langchain import hub, __all__
 import requests
 
 from LoggingAgent.schema import LogQLOutput, LogItem, LogAgentOutput
@@ -241,7 +245,7 @@ def get_logs(logql_query: str, from_time: Optional[str] = None, to_time: Optiona
         logger.error(f"Unexpected error while fetching logs: {e}")
         raise Exception(f"Unexpected error occurred: {e}") from e
 
-
+@traceable
 def logging_agent() -> CompiledStateGraph:
     """
     Main agent to handle log extraction and parsing logic.
@@ -263,10 +267,10 @@ def logging_agent() -> CompiledStateGraph:
 
     Begin!
     '''
-
     user_query = "Logs for issues regarding data being stale encountered by my application - marketdata-publisher?",
     agent = create_react_agent(
-        model=f"anthropic:{CLAUDE_SONNET_4_LATEST}",
+        model=init_chat_model(f"anthropic:{CLAUDE_SONNET_4_LATEST}"),
+        # model="openai:gpt-4.1",
         tools=[get_logql_from_nl_query, get_logs],
         response_format=LogAgentOutput,
         prompt=template,
@@ -284,7 +288,7 @@ def logging_agent() -> CompiledStateGraph:
     #
     # return RootAgentState(
     #     messages=state.messages,
-    #     logs=state.logs + structured_response.logs,
+    #     logs=state.logs + structured_response.logzs,
     #     codebase=state.codebase
     # )
 

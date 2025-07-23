@@ -1,4 +1,7 @@
+from anthropic import Anthropic
 from dotenv import load_dotenv
+from langchain.chat_models import init_chat_model
+from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import StructuredTool
 from langgraph.graph.state import CompiledStateGraph
@@ -6,8 +9,9 @@ from langgraph.prebuilt import create_react_agent
 from langchain_mcp_adapters.client import MultiServerMCPClient
 import asyncio
 from langchain_mcp_adapters.tools import load_mcp_tools
+from langsmith.wrappers import wrap_anthropic
 from pydantic import BaseModel, Field
-
+from langsmith import traceable
 from consts import CLAUDE_SONNET_4_LATEST
 
 
@@ -21,10 +25,9 @@ async def get_deepwiki_tools()->[StructuredTool]:
     tools = await client.get_tools()
     return tools
 
-
+@traceable
 async def codebase_agent() -> CompiledStateGraph:
     tools: [StructuredTool] = await get_deepwiki_tools()
-
     class Output(BaseModel):
         source_code: str = Field(description="Actual Source code extraction related to the query")
         start_line_number: int = Field(description="Start Line number of the source-code extraction")
@@ -52,7 +55,8 @@ async def codebase_agent() -> CompiledStateGraph:
        '''
     load_dotenv()
     agent = create_react_agent(
-        model=f"anthropic:{CLAUDE_SONNET_4_LATEST}",
+        # model="openai:gpt-4.1",
+        model=init_chat_model(f"anthropic:{CLAUDE_SONNET_4_LATEST}"),
         tools=tools,
         prompt=template,
         response_format= Output,

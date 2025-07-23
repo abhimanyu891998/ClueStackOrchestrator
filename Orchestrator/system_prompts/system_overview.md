@@ -15,15 +15,6 @@ The business logic follows this sequence:
 3. **Queue Processing**: The `MessageQueueProcessor` receives orderbook updates, applies processing delays based on market conditions, and validates data integrity
 4. **Client Distribution**: Processed orderbook data is broadcast to all connected WebSocket clients in real-time
 
-## Performance Scenarios
-
-The system simulates different market conditions through configurable performance profiles:
-
-* **stable-mode**: 50ms processing delay (normal market operation)
-* **burst-mode**: 300ms delay (high-frequency trading conditions)
-* **gradual-spike**: 150ms delay (moderate volatility)
-* **extreme-spike**: 500ms delay (maximum stress testing)
-
 These scenarios allow testing how the system behaves under different market stress conditions.
 
 ## Client Interface

@@ -8,3 +8,4 @@ langchain_mcp_adapters
 langchain-openai
 langgraph-supervisor
 ipython
+langsmith
