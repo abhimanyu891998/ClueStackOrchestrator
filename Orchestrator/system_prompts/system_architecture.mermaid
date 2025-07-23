@@ -1,0 +1,49 @@
+graph TD
+    %% Configuration & State
+    subgraph Config ["Configuration & State"]
+        SC["ServerConfig<br/>HOST, PORT, SCENARIOS<br/>MAX_QUEUE_SIZE"]
+        GS["Global State<br/>current_scenario<br/>server_start_time<br/>total_messages_processed"]
+    end
+
+    %% Observability Stack
+    subgraph ObsStack ["Observability Stack"]
+        Logger["setup_logger(name)<br/>from utils.logger"]
+        Metrics["metrics_collector<br/>get_metrics()"]
+    end
+
+    %% FastAPI Application
+    FastAPI["FastAPI app<br/>title: 'MarketDataPublisher'<br/>main.py FastAPI Application"]
+
+    %% Core Processing Pipeline
+    subgraph CorePipeline ["Core Processing Pipeline"]
+        MDL["MarketDataLoader<br/>load_all_scenarios()"]
+        OBP["OrderbookParser<br/>Binance → Internal format"]
+        DP["DataPublisher<br/>start_publishing()"]
+        MQP["MessageQueueProcessor<br/>add_orderbook()<br/>set_callbacks()"]
+    end
+
+    %% WebSocket Connection Management
+    CM["ConnectionManager<br/>active_connections[]<br/>broadcast()"]
+
+    %% External Clients
+    subgraph ExtClients ["External Clients"]
+        WSClients["WebSocket Clients<br/>Real-time data consumers"]
+        HTTPClients["HTTP Clients<br/>Configuration & monitoring"]
+    end
+
+    %% Connections and Flow
+    SC --> FastAPI
+    GS --> FastAPI
+    Logger --> FastAPI
+    Metrics --> FastAPI
+
+    FastAPI --> MDL
+    MDL --> OBP
+    OBP --> DP
+    DP --> MQP
+
+    FastAPI --> |"REST endpoints<br/>/health, /status, /metrics<br/>/config/profiles"| HTTPClients
+    FastAPI --> |"/ws WebSocket endpoint"| CM
+
+    MQP --> CM
+    CM --> WSClients

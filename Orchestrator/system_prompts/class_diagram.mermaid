@@ -1,0 +1,88 @@
+graph TD
+    %% Data Sources
+    subgraph DataSources ["Data Sources"]
+        ScenarioFiles["Scenario JSON Files<br/>stable-mode.json<br/>burst-mode.json<br/>gradual-spike.json<br/>extreme-spike.json"]
+    end
+
+    %% Loading Stage
+    subgraph LoadingStage ["Loading Stage"]
+        MDL["MarketDataLoader<br/>load_scenario()<br/>switch_scenario()<br/>get_next_update()"]
+    end
+
+    %% Parsing Stage
+    subgraph ParsingStage ["Parsing Stage"]
+        OBP["OrderbookParser<br/>parse_binance_orderbook()<br/>validate_orderbook_data()"]
+    end
+
+    %% Processing Stage - Comprehensive MessageQueueProcessor
+    subgraph ProcessingStage ["Processing Stage"]
+        DP["DataPublisher<br/>start_publishing()<br/>speed_multiplier"]
+
+        subgraph MQP ["MessageQueueProcessor - Detailed Pipeline"]
+            %% Main Processing Pipeline
+            Entry["add_orderbook()<br/>Queue management<br/>Capacity monitoring"]
+            ProcessQueue["_process_queue()<br/>Main processing loop"]
+            ValidateSeq["_validate_sequence_integrity()<br/>Sequence gap detection<br/>Price validation"]
+            UpdateAudit["_update_audit_trail()<br/>Compliance records<br/>Audit logging"]
+
+            %% Background Tasks
+            subgraph BackgroundTasks ["Background Tasks"]
+                HeartbeatLoop["_heartbeat_loop()<br/>Server status monitoring<br/>Client health updates"]
+                MemoryMonitor["_memory_monitor()<br/>Resource usage tracking<br/>Incident detection"]
+            end
+
+            %% Performance Management
+            subgraph PerfManagement ["Performance Management"]
+                ScenarioDelays["Scenario-based delays<br/>stable-mode: 50ms<br/>burst-mode: 300ms<br/>extreme-spike: 500ms"]
+                AdaptiveProcessing["Adaptive processing<br/>Memory threshold monitoring<br/>Queue backlog detection"]
+            end
+
+            %% Core Processing
+            ProcessOrderbook["_process_orderbook()<br/>Calculate data age<br/>Apply processing delay"]
+        end
+    end
+
+    %% Data Models
+    subgraph DataModels ["Data Models"]
+        IOB["InternalOrderbook<br/>sequence_id<br/>bids/asks<br/>timestamps"]
+        HBM["HeartbeatMessage<br/>server_status<br/>queue_size<br/>memory_usage_mb"]
+    end
+
+    %% Distribution Stage
+    subgraph DistributionStage ["Distribution Stage"]
+        AsyncQueue["asyncio.Queue<br/>maxsize=MAX_QUEUE_SIZE"]
+        WSClients["WebSocket Clients<br/>/ws endpoint"]
+        RESTClients["REST API Clients<br/>Status endpoints"]
+    end
+
+    %% Main Flow Connections
+    ScenarioFiles --> MDL
+    MDL --> OBP
+    OBP --> DP
+    OBP --> IOB
+    DP --> Entry
+
+    %% MessageQueueProcessor Internal Flow
+    Entry --> ProcessQueue
+    ProcessQueue --> ValidateSeq
+    ValidateSeq --> UpdateAudit
+    UpdateAudit --> ProcessOrderbook
+
+    %% Background Tasks Flow
+    HeartbeatLoop --> HBM
+    MemoryMonitor --> AdaptiveProcessing
+
+    %% Performance Management Flow
+    ScenarioDelays --> ProcessOrderbook
+    AdaptiveProcessing --> ProcessOrderbook
+
+    %% Output Flow
+    ProcessOrderbook --> AsyncQueue
+    HeartbeatLoop --> HBM
+    AsyncQueue --> WSClients
+    HBM --> RESTClients
+
+    %% Feedback Loops
+    ProcessOrderbook -.-> ProcessQueue
+    AdaptiveProcessing -.-> Entry
+    MQP -.-> OBP

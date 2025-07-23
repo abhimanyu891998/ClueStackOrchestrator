@@ -1,0 +1,25 @@
+sequenceDiagram
+    participant Main as "main.py"
+    participant DataLoader as "data_loader"
+    participant QueueProcessor as "queue_processor"
+    participant DataPublisher as "data_publisher"
+
+    Note over Main: startup_event()
+    Main->>DataLoader: load_all_scenarios()
+    Main->>QueueProcessor: set_callbacks()
+    Main->>QueueProcessor: start()
+    Main->>DataPublisher: create publishing task
+
+    Note over Main, DataPublisher: Runtime Operation
+
+    loop Process orderbooks
+        Main->>QueueProcessor: process orderbooks
+        QueueProcessor->>Main: handle_orderbook_processed()
+        QueueProcessor->>Main: handle_heartbeat()
+        QueueProcessor->>Main: handle_incident_alert()
+    end
+
+    Note over Main: shutdown_event()
+    Main->>DataPublisher: cancel publishing_task
+    Main->>QueueProcessor: stop()
+    Main->>Main: close WebSocket connections

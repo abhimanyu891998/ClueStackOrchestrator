@@ -4,3 +4,7 @@ langchain_core
 pydantic
 langgraph
 langchain
+langchain_mcp_adapters
+langchain-openai
+langgraph-supervisor
+ipython

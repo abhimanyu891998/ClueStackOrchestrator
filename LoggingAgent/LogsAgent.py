@@ -10,6 +10,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.prompts import PromptTemplate
 from langchain_core.tools import tool
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import create_react_agent
 from pydantic import BaseModel, Field
 from langchain import hub
@@ -19,6 +20,9 @@ from LoggingAgent.schema import LogQLOutput, LogItem, LogAgentOutput
 from consts import CLAUDE_SONNET_4_LATEST, LOGS_LOOKBACK_DAYS, LOGS_LIMIT_ON_EACH_FETCH, \
     LOGS_FETCH_QUERY_ENDPOINT, CLAUDE_SONNET_3_5_LATEST
 from datetime import datetime, timezone
+
+import os
+from schema import RootAgentState
 from utils import read_file, pretty_print_message, pretty_print_messages
 
 # Configure logging
@@ -92,9 +96,10 @@ def get_logql_from_nl_query(query: str, user_application: str) -> LogQLOutput:
     """
     try:
         # Load system prompts and resources
-        wiki = read_file("LoggingAgent/system_prompts/logql_guide.md")
-        system_prompt = read_file("LoggingAgent/system_prompts/sp_logql_refresher.md")
-        sample_logs = read_file("LoggingAgent/system_prompts/sample_logs_wiki.md")
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        wiki = read_file(os.path.join(current_dir, "system_prompts/logql_guide.md"))
+        system_prompt = read_file(os.path.join(current_dir, "system_prompts/sp_logql_refresher.md"))
+        sample_logs = read_file(os.path.join(current_dir, "system_prompts/sample_logs_wiki.md"))
 
         # Get current UTC time for reference
         utc_date_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
@@ -237,12 +242,13 @@ def get_logs(logql_query: str, from_time: Optional[str] = None, to_time: Optiona
         raise Exception(f"Unexpected error occurred: {e}") from e
 
 
-def logging_agent() -> TypedDict:
+def logging_agent() -> CompiledStateGraph:
     """
     Main agent to handle log extraction and parsing logic.
     """
     template = '''You are an expert log extractor. You will be given a natural language log query and an application name from the user.
-    You have to extract the logs for the application given the tools you have access to.
+    You have to extract the logs for the application given the tools you have access to. You can always assume that there are logs present, if 
+    you're not getting logs then try to make the query a bit more inclusive to get more details.
 
     Use the following format:
 
@@ -263,18 +269,24 @@ def logging_agent() -> TypedDict:
         model=f"anthropic:{CLAUDE_SONNET_4_LATEST}",
         tools=[get_logql_from_nl_query, get_logs],
         response_format=LogAgentOutput,
-        prompt=template
+        prompt=template,
+        name="logs_agent"
     )
-
-    inputs = {"messages": [HumanMessage(content=user_query)]}
-    response = agent.invoke(inputs, {'recursion_limit': 10})
-    structured_response:LogAgentOutput = response['structured_response']
-    logger.info("---------AGENT EXECUTED---------")
-    logger.info("Logs retrieved: ")
-    for log in structured_response.logs:
-        print(log)
-    logger.info(f"LogQL query: {structured_response.logql_query}")
-    return structured_response
+    return agent
+    # inputs = {"messages": [HumanMessage(content=user_query)]}
+    # response = agent.invoke(inputs, {'recursion_limit': 10})
+    # structured_response:LogAgentOutput = response['structured_response']
+    # logger.info("---------AGENT EXECUTED---------")
+    # logger.info("Logs retrieved: ")
+    # for log in structured_response.logs:
+    #     print(log)
+    # logger.info(f"LogQL query: {structured_response.logql_query}")
+    #
+    # return RootAgentState(
+    #     messages=state.messages,
+    #     logs=state.logs + structured_response.logs,
+    #     codebase=state.codebase
+    # )
 
 
 class LoggingReasoningOutput(BaseModel):
